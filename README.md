@@ -1,3 +1,7 @@
+# How to use
+Using docker compose just use the one in the files
+
+
 # Twitch Drops Miner Web
 
 This application allows you to AFK mine timed Twitch drops, without having to worry about switching channels when the one you were watching goes offline, claiming the drops, or even receiving the stream data itself. This helps you save on bandwidth and hassle.
