@@ -1,28 +1,13 @@
-services:  
+services:
   twitch-drops-miner: 
-    image: ${DOCKER_REGISTRY:-ghcr.io}/kaysharp42/twitchdropsminer-web:${TAG:-latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BUILDKIT_INLINE_CACHE: 1
-      cache_from:
-        - ${DOCKER_REGISTRY:-ghcr.io}/kaysharp42/twitchdropsminer-web:${TAG:-latest}
-    container_name: twitchdropsminer-web
+    image: theduke203/twitchminer:latest
+    container_name: twitchminer
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-8080}:8080"
+    # Change the port as you wish
+      - "8085:8080"
     volumes:
-      - ${DATA_DIR:-./data}:/data
+      - ./data:/data
     environment:
-      - TZ=${TIMEZONE:-UTC}
+      - TZ=UTC
       - DOCKER_CONTAINER=true
-    # Optional resource constraints - uncomment and adjust as needed
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '0.50'
-    #       memory: 256M
-    #     reservations:
-    #       cpus: '0.25'
-    #       memory: 128M
