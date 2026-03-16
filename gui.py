@@ -1920,11 +1920,19 @@ class SettingsPanel:
                     )
             else:
                 with RegistryKey(self.AUTOSTART_KEY) as key:
+                    key.delete(self.AUTOSTART_NAME, silent=True)
+        elif sys.platform == "linux":
+            autostart_file: Path = self._get_linux_autostart_filepath()
+            if enabled:
+                file_contents: str = dedent(
+                    f"""
+                    [Desktop Entry]
                     Type=Application
                     Name=Twitch Drops Miner
                     Description=Mine timed drops on Twitch
                     Exec=sh -c '{self._get_autostart_path()}'
                     """
+                )
                 with autostart_file.open('w', encoding="utf8") as file:
                     file.write(file_contents)
             else:
