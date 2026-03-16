@@ -1474,11 +1474,11 @@ class Twitch:
                     for error_dict in response_json["errors"]:
                         if "message" in error_dict:
                             if (
-                                    single_retry
-                                    and error_dict["message"] in (
-                                    "service error"
-                                    "PersistedQueryNotFound"
-                            )
+                                single_retry
+                                and error_dict["message"] in (
+                                    "service error",
+                                    "PersistedQueryNotFound",
+                                )
                             ):
                                 logger.error(
                                     f"Retrying a {error_dict['message']} for "
