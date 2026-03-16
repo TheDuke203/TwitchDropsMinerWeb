@@ -331,8 +331,6 @@ jobs:
       - linux-appimage
       - docker
       - macos
-    - macos
-    - docker
     runs-on: ubuntu-latest
     permissions:
       contents: write
