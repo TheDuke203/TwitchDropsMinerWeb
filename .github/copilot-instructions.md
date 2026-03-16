@@ -322,6 +322,114 @@ run_dev.bat
 
 ---
 
+## Release Process
+
+### Overview
+
+The repository has automated CI/CD workflows that handle building and releasing. The master branch is **protected** — all changes must go through pull requests.
+
+### Workflows
+
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `release.yml` | Push to master with `version.py` changed | Creates git tag `v{version}` |
+| `ci.yml` | Tag `v*.*.*` | Builds Windows/Linux/AppImage artifacts, uploads to GitHub Release |
+| `docker-build.yml` | Tag `v*.*.*` | Builds and publishes Docker image to GHCR |
+| `ci.yml` (dev) | Push to master (no tag) | Updates `dev-build` pre-release with latest artifacts |
+
+### Creating a New Release
+
+**Step 1: Create release branch**
+
+```bash
+git checkout master
+git pull origin master
+git checkout -b release/v{X.Y.Z}
+```
+
+**Step 2: Bump version**
+
+Edit `version.py`:
+```python
+__version__ = "X.Y.Z"
+```
+
+**Step 3: Commit and push**
+
+```bash
+git add version.py
+git commit -m "Bump version to X.Y.Z"
+git push -u origin release/v{X.Y.Z}
+```
+
+**Step 4: Create pull request**
+
+Open PR from `release/v{X.Y.Z}` → `master` with release notes:
+
+```markdown
+## Release vX.Y.Z
+
+### Changes since vA.B.C
+- Feature additions
+- Bug fixes
+- Upstream syncs
+```
+
+**Step 5: Merge PR**
+
+Once merged to master, `release.yml` will:
+1. Detect `version.py` changed
+2. Create tag `vX.Y.Z`
+3. Push the tag
+
+**Step 6: Trigger artifact builds**
+
+⚠️ **IMPORTANT**: Tags created by `release.yml` using `GITHUB_TOKEN` **do NOT trigger other workflows** (GitHub security limitation).
+
+You must **manually recreate the tag** to trigger `ci.yml`:
+
+```bash
+# Pull merged commit
+git checkout master
+git pull origin master
+
+# Delete tag locally and remotely
+git tag -d vX.Y.Z
+git push origin :refs/tags/vX.Y.Z
+
+# Recreate and push tag
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+This triggers:
+- `ci.yml` → builds artifacts → uploads to GitHub Release `vX.Y.Z`
+- `docker-build.yml` → publishes Docker image with tag `X.Y.Z` to GHCR
+
+**Step 7: Verify release**
+
+Check:
+- GitHub Release `vX.Y.Z` has 5 artifacts (Windows, Linux x2, AppImage x2)
+- Docker image published: `ghcr.io/kaysharp42/twitchdropsminer-web:X.Y.Z`
+- Docker image tagged as `:latest` if default branch
+
+### Troubleshooting
+
+| Issue | Cause | Fix |
+|---|---|---|
+| Release has no artifacts (only source code) | Tag created by workflow, didn't trigger `ci.yml` | Manually recreate tag (see Step 6) |
+| Workflow didn't run | Tag push didn't trigger | Check Actions tab, re-push tag |
+| Build failed | Artifact dependencies or syntax error | Check workflow logs, fix, delete & recreate tag |
+| Docker image not published | GHCR auth or Dockerfile issue | Check `docker-build.yml` logs |
+
+### Version Numbering
+
+- **Patch** (`0.1.X`) — Bug fixes, minor improvements, upstream syncs
+- **Minor** (`0.X.0`) — New features, significant changes
+- **Major** (`X.0.0`) — Breaking changes, major overhauls
+
+---
+
 ## Coding Conventions
 
 1. **Always guard GUI access** — `if self.gui_enabled:` before any `self.gui.*`
