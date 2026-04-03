@@ -1359,7 +1359,11 @@ class Twitch:
     async def process_notifications(self, user_id: int, message: JsonType):
         if message["type"] == "create-notification":
             data: JsonType = message["data"]["notification"]
-            if data["type"] == "user_drop_reward_reminder_notification":
+            if data["type"] in (
+                "user_drop_reward_reminder_notification",  # drop confirmation
+                "quests_viewer_reward_campaign_earned_emote",  # emote confirmation
+                # badge confirmation?
+            ):
                 self.change_state(State.INVENTORY_FETCH)
                 await self.gql_request(
                     GQL_OPERATIONS["NotificationsDelete"].with_variables(
@@ -1470,11 +1474,11 @@ class Twitch:
                     for error_dict in response_json["errors"]:
                         if "message" in error_dict:
                             if (
-                                    single_retry
-                                    and error_dict["message"] in (
-                                    "service error"
-                                    "PersistedQueryNotFound"
-                            )
+                                single_retry
+                                and error_dict["message"] in (
+                                    "service error",
+                                    "PersistedQueryNotFound",
+                                )
                             ):
                                 logger.error(
                                     f"Retrying a {error_dict['message']} for "
@@ -1648,6 +1652,8 @@ class Twitch:
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
         self._drops.clear()
+        if self.gui_enabled:
+            self.gui.inv.clear()
         self.inventory.clear()
         self._mnt_triggers.clear()
         switch_triggers: set[datetime] = set()
@@ -1709,6 +1715,13 @@ class Twitch:
         if campaigns:
             campaigns.sort(key=lambda c: c.remaining_minutes)
             return campaigns[0]
+        return None
+
+    def get_active_drop(self, channel: Channel | None = None) -> TimedDrop | None:
+        """Get the currently active drop for the given or currently watched channel."""
+        campaign = self.get_active_campaign(channel)
+        if campaign is not None:
+            return campaign.first_drop
         return None
 
     def inventory_games(self) -> list[Game]:
