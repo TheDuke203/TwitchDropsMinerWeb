@@ -32,3 +32,5 @@ data/blacklist.json
 .env
 credentials.json
 blacklist.json
+.DS_Store
+*.app
